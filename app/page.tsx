@@ -1,5 +1,7 @@
+'use client'
+
 import { useClerk } from "@clerk/nextjs";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { User } from "stream-chat";
 import { LoadingIndicator } from "stream-chat-react";
 
@@ -7,7 +9,7 @@ type HomeState = {
   apiKey: string;
   user: User;
   token: string;
-}
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
 
 export default function Home() {
   const [homeState, setHomeState] = useState<HomeState | undefined>();
@@ -19,7 +21,7 @@ export default function Home() {
     const mail = clerkUser?.primaryEmailAddress?.emailAddress;
 
     if (userId && mail) {
-      const response = await fetch('api/register-user', {
+      const response = await fetch('/api/register-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -32,7 +34,7 @@ export default function Home() {
   }, [clerkUser]);
 
   async function getUserToken(userId: string, userName: string) {
-    const response = await fetch('api/token', {
+    const response = await fetch('/api/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -53,7 +55,7 @@ export default function Home() {
       image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
     }
 
-    const apiKey = process.env.STREAM_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY;
     if (apiKey) {
       setHomeState({
         apiKey: apiKey,
@@ -63,6 +65,20 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    if (clerkUser?.id && clerkUser?.primaryEmailAddress?.emailAddress && !clerkUser.publicMetadata?.streamRegistered) {
+      registerUser().then((response) => {
+        if (response) {
+          getUserToken(clerkUser.id || 'Unknown', clerkUser.primaryEmailAddress?.emailAddress || 'Unknown');
+        }
+      });
+    } else {
+      if (clerkUser?.id) {
+        getUserToken(clerkUser.id || 'Unknown', clerkUser.primaryEmailAddress?.emailAddress || 'Unknown');
+      }
+    }
+  }, [registerUser, clerkUser])
+
   if (!homeState) {
     return <LoadingIndicator />;
   }
@@ -70,5 +86,4 @@ export default function Home() {
   return (
     <div>discord clone nextjs application</div>
   );
-
 }
